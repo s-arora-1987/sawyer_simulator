@@ -44,7 +44,7 @@ class PickAndPlace(object):
         self._tip_name = tip_name # string
         self._hover_distance = hover_distance # in meters
         self._limb = intera_interface.Limb(limb)
-        self._gripper = intera_interface.Gripper()
+        # self._gripper = intera_interface.Gripper()
         # verify robot is enabled
         print("Getting robot state... ")
         self._rs = intera_interface.RobotEnable(intera_interface.CHECK_VERSION)
@@ -57,7 +57,7 @@ class PickAndPlace(object):
         if not start_angles:
             start_angles = dict(zip(self._joint_names, [0]*7))
         self._guarded_move_to_joint_position(start_angles)
-        self.gripper_open()
+        # self.gripper_open()
 
     def _guarded_move_to_joint_position(self, joint_angles, timeout=5.0):
         if rospy.is_shutdown():
@@ -68,11 +68,11 @@ class PickAndPlace(object):
             rospy.logerr("No Joint Angles provided for move_to_joint_positions. Staying put.")
 
     def gripper_open(self):
-        self._gripper.open()
+        # self._gripper.open()
         rospy.sleep(1.0)
 
     def gripper_close(self):
-        self._gripper.close()
+        # self._gripper.close()
         rospy.sleep(1.0)
 
     def _approach(self, pose):
@@ -121,6 +121,7 @@ class PickAndPlace(object):
             ik_step.orientation.z = d*ik_delta.orientation.z + pose.orientation.z
             ik_step.orientation.w = d*ik_delta.orientation.w + pose.orientation.w
             joint_angles = self._limb.ik_request(ik_step, self._tip_name)
+            # print("These are the joint angles I got: ",joint_angles)
             if joint_angles:
                 self._limb.set_joint_positions(joint_angles)
             else:
@@ -132,15 +133,16 @@ class PickAndPlace(object):
         if rospy.is_shutdown():
             return
         # open the gripper
-        self.gripper_open()
+        # self.gripper_open()
         # servo above pose
         self._approach(pose)
         # servo to pose
+        print "_servo_to_pose(pose)"
         self._servo_to_pose(pose)
         if rospy.is_shutdown():
             return
         # close gripper
-        self.gripper_close()
+        # self.gripper_close()
         # retract to clear object
         self._retract()
 
@@ -150,11 +152,12 @@ class PickAndPlace(object):
         # servo above pose
         self._approach(pose)
         # servo to pose
+        print "_servo_to_pose(pose)"
         self._servo_to_pose(pose)
         if rospy.is_shutdown():
             return
         # open the gripper
-        self.gripper_open()
+        # self.gripper_open()
         # retract to clear object
         self._retract()
 
@@ -216,12 +219,6 @@ def main():
     the loop.
     """
     rospy.init_node("ik_pick_and_place_demo")
-    # Load Gazebo Models via Spawning Services
-    # Note that the models reference is the /world frame
-    # and the IK operates with respect to the /base frame
-    load_gazebo_models()
-    # Remove models from the scene on shutdown
-    rospy.on_shutdown(delete_gazebo_models)
 
     limb = 'right'
     hover_distance = 0.15 # meters
@@ -234,6 +231,17 @@ def main():
                              'right_j5': 0.3968371433926965,
                              'right_j6': 1.7659649178699421}
     pnp = PickAndPlace(limb, hover_distance)
+    pnp.move_to_start(starting_joint_angles)
+
+    current_pose = pnp._limb.endpoint_pose()
+    print "current_pose: "+str((current_pose['position'].x,current_pose['position'].y,current_pose['position'].z))
+
+    # Load Gazebo Models via Spawning Services
+    # Note that the models reference is the /world frame
+    # and the IK operates with respect to the /base frame
+    load_gazebo_models()
+    # Remove models from the scene on shutdown
+    rospy.on_shutdown(delete_gazebo_models)
     # An orientation for gripper fingers to be overhead and parallel to the obj
     overhead_orientation = Quaternion(
                              x=-0.00142460053167,
@@ -254,15 +262,19 @@ def main():
         orientation=overhead_orientation))
     # Move to the desired starting angles
     print("Running. Ctrl-c to quit")
-    pnp.move_to_start(starting_joint_angles)
     idx = 0
     while not rospy.is_shutdown():
+        pass
         print("\nPicking...")
         pnp.pick(block_poses[idx])
         print("\nPlacing...")
         idx = (idx+1) % len(block_poses)
         pnp.place(block_poses[idx])
-    return 0
+    return 0        # pnp.pick(block_poses[idx])
+        # print("\nPlacing...")
+        # idx = (idx+1) % len(block_poses)
+        # pnp.place(block_poses[idx])
+
 
 if __name__ == '__main__':
     sys.exit(main())

@@ -55,7 +55,6 @@
   <param unless="$(arg electric_gripper)" name="robot/limb/right/gravity_tip_name"
          value="right_hand" />
 
-
   <!-- We resume the logic in empty_world.launch, changing the name of the world to be launched -->
   <include if="$(arg load_gazebo)" file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find sawyer_gazebo)/worlds/sawyer.world"/>
@@ -80,6 +79,8 @@
       <arg name="gui" value="$(arg gui)" />
   </include>
 
+  <node name="sawyer_joint_trajectory_action_server" pkg="intera_interface" type="joint_trajectory_action_server.py"/>
+
   <!-- sawyer cameras launch file -->
   <arg name="wrist_camera" default="right_hand_camera" />
   <arg name="head_camera"  default="head_camera" />
@@ -87,7 +88,6 @@
       <arg name="wrist_camera" value="$(arg wrist_camera)" />
       <arg name="head_camera" value="$(arg head_camera)" />
   </include>
-
 
   <!-- Publish a static transform between the world and the base of the robot -->
   <node pkg="rosbag" type="play" name="io_robot" args="-l $(find sawyer_gazebo)/share/bags/robot_io.bag" />
